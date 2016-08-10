@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"upper.io/db.v2/lib/sqlbuilder"
 	"upper.io/db.v2/postgresql"
 )
 
+// Database Connection
 var dbSettings = postgresql.ConnectionURL{
 	Database: `goapi`,
 	Host:     `localhost`,
@@ -17,6 +19,15 @@ var dbSettings = postgresql.ConnectionURL{
 	Password: os.Getenv("DB_PASS"),
 }
 
+func dbConnection() sqlbuilder.Database {
+	sess, err := postgresql.Open(dbSettings)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return sess
+}
+
+// Model
 type Todo struct {
 	ID        uint   `json:"id" db:"id"`
 	Name      string `json:"name" db:"name"`
@@ -25,17 +36,14 @@ type Todo struct {
 
 type Todos []Todo
 
+// Actions
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Welcome!")
 }
 
 func TodoIndex(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Testing the env file", os.Getenv("DB_HOST"))
 	var todos Todos
-	sess, err := postgresql.Open(dbSettings)
-	if err != nil {
-		log.Fatal(err)
-	}
+	sess := dbConnection()
 	defer sess.Close()
 
 	if err := sess.Collection("todos").Find().All(&todos); err != nil {
@@ -53,6 +61,9 @@ func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(todos); err != nil {
 		panic(err)
 	}
+}
+
+func TodoCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func TodoShow(w http.ResponseWriter, r *http.Request) {
