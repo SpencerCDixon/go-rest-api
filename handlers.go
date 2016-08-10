@@ -43,20 +43,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	var todos Todos
-	sess := dbConnection()
-	defer sess.Close()
+	db := dbConnection()
+	defer db.Close()
 
-	if err := sess.Collection("todos").Find().All(&todos); err != nil {
+	if err := db.Collection("todos").Find().All(&todos); err != nil {
 		log.Fatal(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-
-	// log.Println("Todos: ")
-	// for _, todo := range todos {
-	// log.Printf("%q (ID: %d)\n", todo.Name, todo.ID)
-	// }
 
 	if err := json.NewEncoder(w).Encode(todos); err != nil {
 		panic(err)
@@ -69,5 +64,19 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 func TodoShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	todoId := vars["todoId"]
-	fmt.Fprintln(w, "Todo show:", todoId)
+
+	var todo Todo
+	db := dbConnection()
+	defer db.Close()
+
+	if err := db.Collection("todos").Find("id", todoId).One(&todo); err != nil {
+		log.Fatal(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(todo); err != nil {
+		panic(err)
+	}
 }

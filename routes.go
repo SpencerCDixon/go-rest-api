@@ -34,6 +34,6 @@ var routes = Routes{
 		"TodoShow",
 		"GET",
 		"/todos/{todoId}",
-		Index,
+		TodoShow,
 	},
 }
