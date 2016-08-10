@@ -29,9 +29,9 @@ func dbConnection() sqlbuilder.Database {
 
 // Model
 type Todo struct {
-	ID        uint   `json:"id" db:"id"`
-	Name      string `json:"name" db:"name"`
-	Completed bool   `json:"completed" db:"completed"`
+	ID       uint   `json:"id,omitempty" db:"id,omitempty"`
+	Name     string `json:"name" db:"name"`
+	Complete bool   `json:"complete" db:"complete"`
 }
 
 type Todos []Todo
@@ -58,7 +58,39 @@ func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO
 func TodoCreate(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var todo Todo
+
+	if err := decoder.Decode(&todo); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422)
+
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+
+	// TODO: FIgure out how to not pass in thd ID when creating object
+
+	log.Printf("todo is name: ", todo.Name)
+	log.Printf("todo is complete: ", todo.Complete)
+
+	// create todo
+	db := dbConnection()
+	defer db.Close()
+	_, err := db.Collection("todos").Insert(todo)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(todo); err != nil {
+		panic(err)
+	}
 }
 
 func TodoShow(w http.ResponseWriter, r *http.Request) {
